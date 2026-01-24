@@ -544,11 +544,34 @@
     return `${year}-W${String(week).padStart(2,"0")}`;
   }
 
-  function extractRevenue(text) {
-    const s = String(text||"").replace(/\./g,"").replace(/,/g,"");
-    const m = s.match(/\bRP\b\s*(\d+)/i);
-    return m ? Number(m[1]) : 0;
+function extractRevenue(text) {
+  const s = String(text || "");
+
+  // 1️⃣ PRIORITAS TOTAL (ITEM HARGA PASTI)
+  const totalItem = s.match(
+    /TOTAL\s*\(ITEM\s*HARGA\s*PASTI\)\s*[:\-]?\s*RP\s*([\d.,]+)/i
+  );
+  if (totalItem) {
+    return Number(totalItem[1].replace(/[^\d]/g, "")) || 0;
   }
+
+  // 2️⃣ PRIORITAS BARIS TOTAL APA PUN
+  const totalLine = s.match(
+    /TOTAL[\s\S]{0,40}?RP\s*[:\-]?\s*([\d.,]+)/i
+  );
+  if (totalLine) {
+    return Number(totalLine[1].replace(/[^\d]/g, "")) || 0;
+  }
+
+  // 3️⃣ FALLBACK: Rp pertama yang ketemu
+  const anyRp =
+    s.match(/RP\s*[:\-]?\s*([\d.,]+)/i) ||
+    s.match(/RP([\d.,]+)/i);
+
+  if (!anyRp) return 0;
+
+  return Number(anyRp[1].replace(/[^\d]/g, "")) || 0;
+}
   function extractQty(text) {
     // QTY dashboard = QTY NEW MEMBER (bukan qty item belanja)
     const s = String(text||"");
